@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>라이트 박스</title>
+  <script async src="https://docs.opencv.org/3.4.0/opencv.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+  
+
+  <style>
+
+    @font-face {
+    font-family: 'PyeongChangPeace-Bold';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2206-02@1.0/PyeongChangPeace-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+}
+    @font-face {
+    font-family: 'NEXON Lv1 Gothic OTF';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/NEXON Lv1 Gothic OTF.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+.custom-upload {
+  display: inline-block;
+  background: white;
+  color: #228b22;
+  border: 2px solid #a8f8a4;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'NEXON Lv1 Gothic OTF';
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px rgba(180, 255, 160, 0.3);
+  margin: 8px;
+}
+.custom-upload:hover {
+  background: #dfffdc;
+  color: #146414;
+  box-shadow: 0 0 16px rgba(180, 255, 160, 0.6);
+}
+
+    #lightGlow {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(180, 255, 160, 0.8), transparent 80%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -10;
+      transition: width 0.3s ease, height 0.3s ease;
+      filter: blur(20px);
+    }
+    #keyword {
+  width: 300px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-family: 'NEXON Lv1 Gothic OTF';
+  border: 2px solid #a8f8a4;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 8px rgba(180, 255, 160, 0.3);
+  margin: 8px;
+}
+
+#keyword:focus {
+  border-color: #66cc66;
+  box-shadow: 0 0 12px rgba(100, 255, 160, 0.6);
+}
+  
+    button {
+  background: white;
+  color: #228b22;
+  border: 2px solid #a8f8a4;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'NEXON Lv1 Gothic OTF';
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 8px rgba(180, 255, 160, 0.3);
+  margin: 8px;
+}
+
+button:hover {
+  background: #dfffdc;
+  color: #146414;
+  box-shadow: 0 0 16px rgba(180, 255, 160, 0.6);
+}
+
+    body { font-family: sans-serif; text-align: center; margin: 2em; background: #fff; color: #222; }
+    canvas {
+  border: 2px solid #c6ffb5;
+  box-shadow: 0 0 20px rgba(180, 255, 160, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  margin-top: 1em;
+  width: 650px;
+  height: auto;
+}
+input[type=range] {
+  -webkit-appearance: none; 
+  width: 500px;
+  height: 10px;
+  background: #e5ffe5;
+  border-radius: 5px;
+  outline: none;
+  margin: 10px 0;
+}
+
+/* 트랙 */
+input[type=range]::-webkit-slider-runnable-track {
+  height: 8px;
+  background: linear-gradient(to right, #a8f8a4, #d6ffd6);
+  border: 1px solid #888;  
+  border-radius: 5px;
+}
+input[type=range]::-moz-range-track {
+  height: 8px;
+  background: linear-gradient(to right, #a8f8a4, #d6ffd6);
+  border: 1px solid #888;  
+  border-radius: 5px;
+}
+
+/* 엄지 */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #90e190;
+  border: 2px solid #228b22;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -6px;
+}
+input[type=range]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #90e190;
+  border: 2px solid #228b22;
+  border-radius: 50%;
+  cursor: pointer;
+  }
+    #images img { max-width: 150px; margin: 5px; border-radius: 8px; cursor: pointer; }
+    #palette { display: flex; justify-content: center; margin-top: 1em; gap: 10px; }
+    .swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.swatch::after {
+  content: attr(data-hex);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 3px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.swatch:hover::after {
+  opacity: 1;
+}
+.swatch {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.swatch:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+#images img {
+  transition: transform 0.3s ease;
+}
+
+#images img:hover {
+  transform: scale(1.05);
+  z-index: 1;
+}
+    .slider-container {
+  margin: 1em auto;
+  width: 670px;
+  text-align: left;
+  }
+  .slider-row {
+    display: grid;
+    grid-template-columns: 140px 40px 1fr;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0px;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #historyToggle {
+  position: fixed;
+  right: 0;
+  top: 0;
+  padding: 10px 16px;
+  background: #a8f8a4;
+  color: #146414;
+  font-family: 'NEXON Lv1 Gothic OTF';
+  font-size: 14px;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s ease;
+}
+#historyToggle:hover {
+  background: #c9ffd0;
+}
+
+#historyPanel {
+  position: fixed;
+  right: 0;
+  top: 40px;
+  width: 300px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #f5fff4;
+  border-left: 2px solid #a8f8a4;
+  padding: 16px;
+  box-shadow: -4px 0 10px rgba(180, 255, 160, 0.4);
+  display: none;
+  text-align: left;
+  border-radius: 16px 0 0 16px;
+  transition: all 0.3s ease;
+}
+
+.history-item {
+  background: #ffffff;
+  border: 1px solid #c8f7c4;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #228b22;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.history-item:hover {
+  background: #eaffea;
+}
+.history-item.newest {
+  border: 2px solid #90e190;
+  background: #f0fff0;
+}
+   
+    .flex{display: flex;flex-wrap: wrap;}
+    .w3{width: 300px}
+    .wrap{width: 300px; margin: auto;}
+    .padding200{padding: 200px}
+    .padding400{padding: 400px}
+    .padding200nb{padding-bottom: 0px;padding-top: 200;margin: auto;}
+    .title{font-family: 'PyeongChangPeace-Bold' ; font-size: 8rem}
+    .subtitle{font-family: 'PyeongChangPeace-Bold' ; font-size: 3.5rem}
+    .no-margin{margin: 0px}
+    .text{font-family: NEXON Lv1 Gothic OTF; font-size: 1rem; line-height:1 }
+
+
+
+    footer{padding: 200px}
+  </style>
+</head>
+<body>
+  <div id="gradient-bg"></div>
+  <div id="lightGlow"></div>
+  <div id="historyToggle">🕘 히스토리</div>
+  <div id="historyPanel">
+    <button id="clearHistory" style="display:none;">🧹 히스토리 비우기</button>
+  </div>
+    <div class="padding200 ">
+      <h1 class="title no-margin">라이트 박스</h1>
+      <h2 class="subtitle">초보 그림러를 위한 보조 툴</h2>
+    </div>
+
+ <section class="padding400">
+    <p class="text">러프 스케치 이미지 업로드 후 자동 선화 추출</p>
+
+    <label for="upload" class="custom-upload">📁 이미지 업로드</label>
+  <input type="file" id="upload" style="display:none" /><br>
+    <canvas id="canvas" width="650"></canvas>
+    <div class="slider-container text">
+      <div class="slider-row">
+        <label for="lowThreshold">약한 선 감도 : <span id="lowVal">30</span></label>
+        <input type="range" id="lowThreshold" min="0" max="100" value="30">
+      </div>
+      <br>
+      <div class="slider-row">
+      <label for="highThreshold">강한 선 감도 : <span id="highVal">100</span></label>
+      <input type="range" id="highThreshold" min="50" max="200" value="100">
+      </div>
+      <br>
+      <div class="slider-row">
+      <label for="blurSlider">블러 강도: <span id="blurVal">0.5</span></label>
+      <input type="range" id="blurSlider" min="0" max="3" step="0.1" value="0.5">
+      </div>
+      <br>
+      <div class="slider-row">
+      <label for="contrastSlider">대비 강도: <span id="contrastVal">1.2</span></label>
+      <input type="range" id="contrastSlider" min="0.5" max="3" step="0.1" value="1.2">
+    </div>
+    </div>
+    <button id="extract">선 따기 실행</button>
+    <button id="download">다운로드</button>
+    <button id="reset">리셋</button>
+   </section>
+  <section class="padding200nb">
+    <div id="section2">
+    <h2 class="subtitle"> 키워드로 레퍼런스 이미지 검색</h2>
+    <input type="text" id="keyword" placeholder="예: Ocean" />
+    <button id="search">🔍 검색</button>
+    <div id="images"></div>
+  </div>
+  </section>
+  <section class="">
+    <h2 class="text"> 대표 이미지로부터 컬러 팔레트 추천</h2>
+    <div id="palette"></div>
+    <img id="hidden-img" src="" style="display: none" crossorigin="anonymous" />
+  </section>
+  <h2 class=" class="padding400>(실제 선따기 적용 예시)</h2>
+  <div class="flex"> 
+    <div class="wrap">
+    <img src="ex0.jpeg" class="w3"><br>
+    <p2>적용 전</p2>
+  </div>
+  <div class="wrap"> 
+    <img src="ex1.png" class="w3"><br>
+    <p2>적용 예시1</p2>
+  </div>
+  <div class="wrap"> 
+    <img src="ex2.png" class="w3"><br>
+    <p2>적용 예시2</p2>
+  </div>
+</div>
+<section class="padding400">
+</section>
+<section class="padding400">
+</section>
+<section class="padding400">
+</section>
+<footer>초보 그림러를 위한 보조 툴, 라이트 박스&copy;2025 최종민 모든 권리보유.
+</footer>
+  <script>
+    let originalImgElement = null;
+    let originalImageData = null;
+    const history = [];
+
+    const upload = document.getElementById('upload');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    const blurSlider = document.getElementById('blurSlider');
+    const contrastSlider = document.getElementById('contrastSlider');
+
+    document.getElementById('historyToggle').onclick = () => {
+      const panel = document.getElementById('historyPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    };
+
+    document.querySelectorAll('input[type=range]').forEach(slider => {
+      slider.addEventListener('input', () => {
+        document.getElementById('lowVal').innerText = document.getElementById('lowThreshold').value;
+        document.getElementById('highVal').innerText = document.getElementById('highThreshold').value;
+        document.getElementById('blurVal').innerText = blurSlider.value;
+        document.getElementById('contrastVal').innerText = contrastSlider.value;
+        updateEdgePreview();
+      });
+    });
+
+    upload.addEventListener('change', e => {
+      const file = e.target.files[0];
+      const img = new Image();
+      img.onload = () => {
+        originalImgElement = img;
+        const ratio = img.height / img.width;
+        canvas.width = 650;
+        canvas.height = 650 * ratio;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        updateEdgePreview();
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    document.getElementById('extract').addEventListener('click', updateEdgePreview);
+
+    document.getElementById('reset').addEventListener('click', () => {
+      if (originalImageData) {
+        ctx.putImageData(originalImageData, 0, 0);
+      }
+    });
+
+    function updateEdgePreview() {
+      if (!cv || !originalImgElement) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(originalImgElement, 0, 0, canvas.width, canvas.height);
+
+      let src = cv.imread(canvas);
+      let dst = new cv.Mat();
+      let low = parseInt(document.getElementById('lowThreshold').value);
+      let high = parseInt(document.getElementById('highThreshold').value);
+      let blurSigma = parseFloat(blurSlider.value);
+      let contrast = parseFloat(contrastSlider.value);
+
+      cv.cvtColor(src, src, cv.COLOR_RGBA2GRAY);
+      cv.GaussianBlur(src, src, new cv.Size(3, 3), blurSigma);
+      cv.convertScaleAbs(src, src, contrast, 0);
+      cv.Canny(src, dst, low, high, 3, false);
+
+      let out = new cv.Mat();
+      cv.cvtColor(dst, out, cv.COLOR_GRAY2RGBA);
+
+      for (let i = 0; i < out.rows; i++) {
+        for (let j = 0; j < out.cols; j++) {
+          const pixel = out.ucharPtr(i, j);
+          if (pixel[0] > 0) {
+            pixel[0] = 0;
+            pixel[1] = 0;
+            pixel[2] = 0;
+            pixel[3] = 255;
+          } else {
+            pixel[3] = 0;
+          }
+        }
+      }
+
+      cv.imshow(canvas, out);
+
+      const dataURL = canvas.toDataURL();
+      const entry = {
+        url: dataURL,
+        settings: `Low: ${low} | High: ${high} | Blur: ${blurSigma} | Contrast: ${contrast}`
+      };
+      history.push(entry);
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.textContent = `[${history.length}] ${entry.settings}`;
+      item.title = '클릭하면 이 시점으로 되돌아갑니다';
+
+      item.onclick = () => {
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = entry.url;
+      };
+      document.querySelectorAll('.history-item').forEach(item => {
+  item.classList.remove('newest');
+});
+item.classList.add('newest');
+document.getElementById('historyPanel').appendChild(item);
+
+      src.delete(); dst.delete(); out.delete();
+    }
+
+    document.getElementById('download').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'lineart.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    document.getElementById('search').addEventListener('click', async () => {
+      const query = document.getElementById('keyword').value;
+      if (!query) return;
+      const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=16&client_id=PFWCbsE5v-C3okgYcKRQHBJR_-w36Na_cSqJsSjP6yk`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const container = document.getElementById('images');
+      container.innerHTML = '';
+      data.results.forEach(img => {
+        const el = document.createElement('img');
+        el.src = img.urls.small;
+        el.addEventListener('click', () => {
+          const hiddenImg = document.getElementById('hidden-img');
+          hiddenImg.src = img.urls.small;
+        });
+        container.appendChild(el);
+      });
+    });
+    document.getElementById('keyword').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('search').click();
+      }
+    });
+    document.getElementById('hidden-img').addEventListener('load', () => {
+      const colorThief = new ColorThief();
+      const img = document.getElementById('hidden-img');
+      const palette = colorThief.getPalette(img, 5);
+      const paletteDiv = document.getElementById('palette');
+      paletteDiv.innerHTML = '';
+      palette.forEach(color => {
+  const swatch = document.createElement('div');
+  swatch.className = 'swatch';
+
+  // HEX 값 생성
+  const hex = `#${color.map(c => c.toString(16).padStart(2, '0')).join('')}`;
+
+  swatch.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+  swatch.setAttribute('data-hex', hex); // 커스텀 툴팁용
+  swatch.title = hex; // 기본 브라우저 툴팁
+
+  paletteDiv.appendChild(swatch);
+});
+    });
+  </script>
+ <script>
+const glow = document.getElementById('lightGlow');
+
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY;
+  const newSize = 400 + scrollY * 2;
+  glow.style.width = `${newSize}px`;
+  glow.style.height = `${newSize}px`;
+});
+
+</script>
+<script>const clearBtn =document.getElementById('clearHistory').addEventListener('click', () => {
+  
+  history.length = 0;
+
+  
+  const panel = document.getElementById('historyPanel');
+  panel.querySelectorAll('.history-item').forEach(el => el.remove());
+});
+clearBtn.addEventListener('click', () => {
+  document.getElementById('historyPanel').innerHTML = '';
+  history.length = 0;
+});</script>
+<script>document.getElementById('historyToggle').onclick = () => {
+  const panel = document.getElementById('historyPanel');
+  const clearBtn = document.getElementById('clearHistory');
+  const isVisible = panel.style.display === 'block';
+
+  panel.style.display = isVisible ? 'none' : 'block';
+  clearBtn.style.display = isVisible ? 'none' : 'inline-block';
+};</script>
+</body>
+</html>
