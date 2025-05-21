@@ -5,8 +5,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>라이트 박스</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
   <script async src="https://docs.opencv.org/3.4.0/opencv.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+  
+  
+
+
   
 
   <style>
@@ -527,8 +534,7 @@ document.getElementById('historyPanel').appendChild(item);
   paletteDiv.appendChild(swatch);
 });
     });
-  </script>
- <script>
+ 
 const glow = document.getElementById('lightGlow');
 
 window.addEventListener('scroll', () => {
@@ -538,26 +544,29 @@ window.addEventListener('scroll', () => {
   glow.style.height = `${newSize}px`;
 });
 
-</script>
-<script>const clearBtn =document.getElementById('clearHistory').addEventListener('click', () => {
-  
-  history.length = 0;
-
-  
-  const panel = document.getElementById('historyPanel');
-  panel.querySelectorAll('.history-item').forEach(el => el.remove());
-});
-clearBtn.addEventListener('click', () => {
-  document.getElementById('historyPanel').innerHTML = '';
-  history.length = 0;
-});</script>
-<script>document.getElementById('historyToggle').onclick = () => {
+document.getElementById('historyToggle').onclick = () => {
   const panel = document.getElementById('historyPanel');
   const clearBtn = document.getElementById('clearHistory');
   const isVisible = panel.style.display === 'block';
 
   panel.style.display = isVisible ? 'none' : 'block';
   clearBtn.style.display = isVisible ? 'none' : 'inline-block';
-};</script>
+};
+ const clearBtn = document.getElementById('clearHistory');
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    const panel = document.getElementById('historyPanel');
+    panel.querySelectorAll('.history-item').forEach(el => el.remove());
+    panel.innerHTML = `<button id="clearHistory" style="display:none;">🗑️ 히스토리 비우기</button>`;
+    history.length = 0;
+
+    
+    document.getElementById('clearHistory').addEventListener('click', () => {
+      document.getElementById('historyPanel').innerHTML = `<button id="clearHistory" style="display:none;">🧹 히스토리 비우기</button>`;
+      history.length = 0;
+    });
+  });
+}
+</script>
 </body>
 </html>
