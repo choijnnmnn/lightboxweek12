@@ -284,7 +284,56 @@ input[type=range]::-moz-range-thumb {
     .no-margin{margin: 0px}
     .text{font-family: NEXON Lv1 Gothic OTF; font-size: 1rem; line-height:1 }
 
+  .circle-nav {
+  position: fixed;
+  top: 30%;
+  left: 0;
+  width: 200px;
+  height: 400px;
+  background: radial-gradient(circle at left center, rgba(180,255,160,0.4), transparent 90%);
+  border-top-right-radius: 200px;
+  border-bottom-right-radius: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: transform 0.4s ease, background 0.4s ease;
+}
 
+
+.circle-nav:hover {
+  transform: scale(1.1);
+  background: radial-gradient(circle at left center, rgba(180,255,160,0.6), transparent 90%);
+}
+.circle-nav nav {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.circle-nav a {
+  color: #1a471a;
+  font-weight: bold;
+  text-decoration: none;
+  font-family: 'NEXON Lv1 Gothic OTF';
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.circle-nav a:hover {
+  transform: translateY(-50%) scale(1.15);
+  background: linear-gradient(90deg, #c4ffc4, #e5ffe5);
+  color: black;
+  transform: scale(1.05);
+}
+
+
+
+
+html {
+  scroll-behavior: smooth;
+}
 
     footer{padding: 200px}
   </style>
@@ -296,12 +345,21 @@ input[type=range]::-moz-range-thumb {
   <div id="historyPanel">
     <button id="clearHistory" style="display:none;">🧹 히스토리 비우기</button>
   </div>
+  <!-- HTML -->
+<div class="circle-nav">
+  <nav>
+    <a href="#section1">선 추출</a>
+    <a href="#section2">레퍼런스</a>
+    <a href="#section3">컬러팔레트</a>
+  </nav>
+</div>
+</nav>
     <div class="padding200 ">
       <h1 class="title no-margin">라이트 박스</h1>
       <h2 class="subtitle">초보 그림러를 위한 보조 툴</h2>
     </div>
 
- <section class="padding400">
+ <section class="padding400" id="section1">
     <p class="text">러프 스케치 이미지 업로드 후 자동 선화 추출</p>
 
     <label for="upload" class="custom-upload">📁 이미지 업로드</label>
@@ -340,7 +398,7 @@ input[type=range]::-moz-range-thumb {
     <div id="images"></div>
   </div>
   </section>
-  <section class="">
+  <section class="" id="#section3">
     <h2 class="text"> 대표 이미지로부터 컬러 팔레트 추천</h2>
     <div id="palette"></div>
     <img id="hidden-img" src="" style="display: none" crossorigin="anonymous" />
@@ -539,7 +597,9 @@ const glow = document.getElementById('lightGlow');
 
 window.addEventListener('scroll', () => {
   const scrollY = window.scrollY;
-  const newSize = 400 + scrollY * 2;
+  const maxSize = window.innerHeight;
+const scrollSize = 400 + scrollY * 2;
+const newSize = Math.min(scrollSize, maxSize);
   glow.style.width = `${newSize}px`;
   glow.style.height = `${newSize}px`;
 });
