@@ -128,7 +128,7 @@ input[type=range] {
   margin: 10px 0;
 }
 
-/* 트랙 */
+
 input[type=range]::-webkit-slider-runnable-track {
   height: 8px;
   background: linear-gradient(to right, #a8f8a4, #d6ffd6);
@@ -367,7 +367,7 @@ html {
   <div id="historyPanel">
     <button id="clearHistory" style="display:none;">🧹 히스토리 비우기</button>
   </div>
-  <!-- HTML -->
+  
 <div class="circle-nav">
   <nav>
     <a href="#section1">선 추출</a>
@@ -591,12 +591,12 @@ document.getElementById('historyPanel').appendChild(item);
   const swatch = document.createElement('div');
   swatch.className = 'swatch';
 
-  // HEX 값 생성
+  
   const hex = `#${color.map(c => c.toString(16).padStart(2, '0')).join('')}`;
 
   swatch.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-  swatch.setAttribute('data-hex', hex); // 커스텀 툴팁용
-  swatch.title = hex; // 기본 브라우저 툴팁
+  swatch.setAttribute('data-hex', hex); 
+  swatch.title = hex; 
 
   paletteDiv.appendChild(swatch);
 });
