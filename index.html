@@ -128,7 +128,7 @@ input[type=range] {
   margin: 10px 0;
 }
 
-
+/* 트랙 */
 input[type=range]::-webkit-slider-runnable-track {
   height: 8px;
   background: linear-gradient(to right, #a8f8a4, #d6ffd6);
@@ -289,7 +289,7 @@ input[type=range]::-moz-range-thumb {
     .subtitle{font-family: 'RiaSans-ExtraBold' ; font-size: 3.5rem}
     .no-margin{margin: 0px}
     .text{font-family: NEXON Lv1 Gothic OTF; font-size: 1rem; line-height:1 }
-    .boldtext{font-family: NEXON Lv1 Gothic OTF; font-size: 1.5rem; line-height:1 ;font-weight: bold;}
+    .boldtext{font-family: NEXON Lv1 Gothic OTF; font-size: 1.5rem; line-height:1 ;font-weight: extrabold;}
 
   .circle-nav {
   position: fixed;
@@ -367,7 +367,7 @@ html {
   <div id="historyPanel">
     <button id="clearHistory" style="display:none;">🧹 히스토리 비우기</button>
   </div>
-  
+  <!-- HTML -->
 <div class="circle-nav">
   <nav>
     <a href="#section1">선 추출</a>
@@ -413,6 +413,7 @@ html {
     <button id="download">다운로드</button>
     <button id="reset">리셋</button>
    </section>
+  
   <section class="padding200nb">
     <div id="section2">
     <h2 class="subtitle"> 키워드로 레퍼런스 이미지 검색</h2>
@@ -423,12 +424,19 @@ html {
   </section>
   <section class="">
     <div id="section3">
-    <h2 class="boldtext">레퍼런스 이미지 기반 컬러 팔레트 추천</h2>
+    <h2 class="boldtext"> 대표 이미지로부터 컬러 팔레트 추천</h2>
     <h2 class="text">컬러칩에 마우스를 올리면 웹 색상 코드를 보여줍니다.</h2>
     <div id="palette"></div>
     <img id="hidden-img" src="" style="display: none" crossorigin="anonymous" />
   </div>
   </section>
+   <section class="padding200nb">
+  <h2 class="boldtext">추출된 선화 위에 컬러 시뮬레이션</h2>
+  <canvas id="fillCanvas" width="650"></canvas>
+  <p class="text">색을 선택하고 선화 위를 클릭해보세요.</p>
+  <input type="color" id="fillColorPicker" value="#ff0000">
+  <button id="undoFill">되돌리기</button>
+</section>
   
 </div>
 <section class="padding400">
@@ -502,7 +510,8 @@ html {
       cv.GaussianBlur(src, src, new cv.Size(3, 3), blurSigma);
       cv.convertScaleAbs(src, src, contrast, 0);
       cv.Canny(src, dst, low, high, 3, false);
-
+      let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2));
+cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, kernel);
       let out = new cv.Mat();
       cv.cvtColor(dst, out, cv.COLOR_GRAY2RGBA);
 
@@ -548,7 +557,12 @@ item.classList.add('newest');
 document.getElementById('historyPanel').appendChild(item);
 
       src.delete(); dst.delete(); out.delete();
-    }
+      // ▶ fillCanvas에 선화 복사
+      fillCanvas.width = canvas.width;
+      fillCanvas.height = canvas.height;
+      fillCtx.clearRect(0, 0, fillCanvas.width, fillCanvas.height);
+      fillCtx.drawImage(canvas, 0, 0);
+          }
 
     document.getElementById('download').addEventListener('click', () => {
       const link = document.createElement('a');
@@ -591,12 +605,12 @@ document.getElementById('historyPanel').appendChild(item);
   const swatch = document.createElement('div');
   swatch.className = 'swatch';
 
-  
+  // HEX 값 생성
   const hex = `#${color.map(c => c.toString(16).padStart(2, '0')).join('')}`;
 
   swatch.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-  swatch.setAttribute('data-hex', hex); 
-  swatch.title = hex; 
+  swatch.setAttribute('data-hex', hex); // 커스텀 툴팁용
+  swatch.title = hex; // 기본 브라우저 툴팁
 
   paletteDiv.appendChild(swatch);
 });
@@ -661,6 +675,112 @@ if (clearBtn) {
       document.querySelector('.slider-tooltip')?.remove();
     });
   });
+const sourceCanvas = document.getElementById('canvas'); // 선화 추출 캔버스
+const destCanvas = document.getElementById('fillCanvas');
+const destCtx = destCanvas.getContext('2d');
+
+destCtx.drawImage(sourceCanvas, 0, 0); // 선화를 복사
+
+  const fillCanvas = document.getElementById('fillCanvas');
+const fillCtx = fillCanvas.getContext('2d', { willReadFrequently: true });
+const fillColorPicker = document.getElementById('fillColorPicker');
+const fillHistory = [];  // fillCanvas의 이전 상태들을 저장
+
+fillCanvas.addEventListener('click', (e) => {
+  const rect = fillCanvas.getBoundingClientRect();
+  const x = Math.floor(e.clientX - rect.left);
+  const y = Math.floor(e.clientY - rect.top); fillHistory.push(fillCtx.getImageData(0, 0, fillCanvas.width, fillCanvas.height));
+
+  const imgData = fillCtx.getImageData(0, 0, fillCanvas.width, fillCanvas.height);
+  const targetColor = getColorAt(imgData, Math.floor(x), Math.floor(y));
+  const fillColor = hexToRgba(fillColorPicker.value);
+
+  floodFill(imgData, x, y, targetColor, fillColor);
+  fillCtx.putImageData(imgData, 0, 0);
+
+  if (x < 0 || y < 0 || x >= fillCanvas.width || y >= fillCanvas.height) return;
+
+  imgData = fillCtx.getImageData(0, 0, fillCanvas.width, fillCanvas.height);
+  targetColor = getColorAt(imgData, x, y);
+  fillColor = hexToRgba(fillColorPicker.value);
+
+  if (colorsMatch(targetColor, fillColor)) return; // 이미 같은 색이면 return
+
+  floodFill(imgData, x, y, targetColor, fillColor);
+  fillCtx.putImageData(imgData, 0, 0);
+});
+
+function getColorAt(imgData, x, y) {
+  if (x < 0 || x >= imgData.width || y < 0 || y >= imgData.height) return [0, 0, 0, 0];
+  const index = (y * imgData.width + x) * 4;
+  return [
+    imgData.data[index],
+    imgData.data[index + 1],
+    imgData.data[index + 2],
+    imgData.data[index + 3]
+  ];
+}
+// 색상 유사도 비교 함수 - tolerance 범위 내 RGB 차이 허용
+function colorsMatch(c1, c2, tolerance = 16) {
+  return Math.abs(c1[0] - c2[0]) < tolerance &&
+         Math.abs(c1[1] - c2[1]) < tolerance &&
+         Math.abs(c1[2] - c2[2]) < tolerance &&
+         Math.abs(c1[3] - c2[3]) < tolerance;
+}
+
+function hexToRgba(hex) {
+  const bigint = parseInt(hex.slice(1), 16);
+  return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255, 255];
+}
+
+function floodFill(imgData, x, y, target, fill) {
+  const stack = [[x, y]];
+  const width = imgData.width;
+  const height = imgData.height;
+
+  function matchColor(index) {
+  const current = [
+    imgData.data[index],
+    imgData.data[index + 1],
+    imgData.data[index + 2],
+    imgData.data[index + 3]
+  ];
+  return colorsMatch(current, target);
+}
+
+  function setColor(index) {
+    imgData.data[index] = fill[0];
+    imgData.data[index + 1] = fill[1];
+    imgData.data[index + 2] = fill[2];
+    imgData.data[index + 3] = fill[3];
+  }
+
+  while (stack.length) {
+    const [px, py] = stack.pop();
+    if (px < 0 || px >= width || py < 0 || py >= height) continue;
+
+    const idx = (py * width + px) * 4;
+
+    
+    if (!matchColor(idx)) continue;
+
+    setColor(idx);
+
+    stack.push([px + 1, py]);
+    stack.push([px - 1, py]);
+    stack.push([px, py + 1]);
+    stack.push([px, py - 1]);
+  }
+}
+document.getElementById('undoFill').addEventListener('click', () => {
+  if (fillHistory.length > 0) {
+    const lastState = fillHistory.pop();
+    fillCtx.putImageData(lastState, 0, 0);
+  } else {
+    alert('되돌릴 내용이 없습니다.');
+  }
+});
+
 </script>
 </body>
 </html>
